@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { uploadBinaryFile } from '@/lib/githubClient'
+import { uploadBinaryFile } from '@/lib/googleDriveClient'
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 const FILENAME_RE = /^[a-zA-Z0-9._-]+$/
@@ -20,13 +20,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const token = process.env.GITHUB_TOKEN
-  const owner = process.env.GITHUB_OWNER
-  const repo = process.env.GITHUB_REPO
-  const branch = process.env.GITHUB_BRANCH ?? 'main'
+  const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON
+  const rootFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID
 
-  if (!token || !owner || !repo) {
-    return NextResponse.json({ success: false, error: 'GitHub 환경변수 미설정' }, { status: 500 })
+  if (!serviceAccountJson || !rootFolderId) {
+    return NextResponse.json({ success: false, error: 'Google Drive 환경변수 미설정' }, { status: 500 })
   }
 
   let body: UploadAudioPayload
@@ -53,11 +51,12 @@ export async function POST(req: NextRequest) {
   }
 
   const [year, month, day] = date.split('-')
-  const config = { token, owner, repo, branch }
   const audioPath = `raw-data/${year}/${month}/${day}/audio/${fileName}`
+  const mimeType = fileName.endsWith('.webm') ? 'audio/webm' : 'audio/mpeg'
 
   try {
-    await uploadBinaryFile(config, audioPath, audioBase64, `audio: ${date} ${fileName}`)
+    const config = { serviceAccountJson, rootFolderId }
+    await uploadBinaryFile(config, audioPath, audioBase64, mimeType)
     return NextResponse.json({ success: true, path: audioPath, sessionId })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)

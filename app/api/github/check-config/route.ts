@@ -1,26 +1,24 @@
 import { NextResponse } from 'next/server'
-import { checkRepoAccess } from '@/lib/githubClient'
+import { checkFolderAccess } from '@/lib/googleDriveClient'
 
 export async function GET() {
-  const token = process.env.GITHUB_TOKEN
-  const owner = process.env.GITHUB_OWNER
-  const repo = process.env.GITHUB_REPO
-  const branch = process.env.GITHUB_BRANCH ?? 'main'
+  const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON
+  const rootFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID
 
-  if (!token || !owner || !repo) {
+  if (!serviceAccountJson || !rootFolderId) {
     return NextResponse.json({
       configured: false,
       repoAccessible: false,
-      error: '환경변수 미설정: GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO 확인 필요',
+      error: '환경변수 미설정: GOOGLE_SERVICE_ACCOUNT_JSON, GOOGLE_DRIVE_FOLDER_ID 확인 필요',
     })
   }
 
   try {
-    const accessible = await checkRepoAccess({ token, owner, repo, branch })
+    const accessible = await checkFolderAccess({ serviceAccountJson, rootFolderId })
     return NextResponse.json({
       configured: true,
       repoAccessible: accessible,
-      error: accessible ? undefined : 'repo 접근 불가 — token 권한 또는 repo명 확인 필요',
+      error: accessible ? undefined : 'Drive 폴더 접근 불가 — 서비스 계정 공유 여부 확인 필요',
     })
   } catch (err) {
     return NextResponse.json({
