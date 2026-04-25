@@ -1,0 +1,22 @@
+# env
+.env.local
+.env.*.local
+
+# Next.js
+.next/
+out/
+build/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PWA generated
+public/workbox-*.js
+public/sw.js
+public/sw.js.map
+public/worker-*.js

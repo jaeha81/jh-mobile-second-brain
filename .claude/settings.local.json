@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"C:/ai프로젝트/jh-harnessFramework-dashboard\" status)"
+    ]
+  }
+}
