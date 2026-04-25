@@ -40,7 +40,10 @@ export default function HomePage() {
       setLastSync(syncLog?.syncedAt)
 
       if (ok && settings.autoSync && events.length > 0 && !autoSyncAttempted.current) {
-        const alreadySyncedToday = syncLog?.syncedAt?.startsWith(today)
+        const syncedDate = syncLog?.syncedAt
+          ? new Date(syncLog.syncedAt).toLocaleDateString('en-CA')
+          : ''
+        const alreadySyncedToday = syncedDate === today
         if (!alreadySyncedToday) {
           autoSyncAttempted.current = true
           performSync()
@@ -67,7 +70,7 @@ export default function HomePage() {
       })
       const data = await res.json()
       if (data.success) {
-        const syncLog = await import('@/lib/db').then(m => m.getLatestSyncLog())
+        const syncLog = await getLatestSyncLog()
         setLastSync(syncLog?.syncedAt)
       }
       return data

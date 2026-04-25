@@ -35,9 +35,10 @@ export async function upsertFile(
   config: GithubConfig,
   path: string,
   content: string,
-  commitMessage: string
+  commitMessage: string,
+  existingSha?: string | null
 ): Promise<void> {
-  const sha = await getFileSHA(config, path)
+  const sha = existingSha !== undefined ? existingSha : await getFileSHA(config, path)
   const payload: GithubFilePayload = {
     path,
     content: toBase64(content),
@@ -140,5 +141,5 @@ export async function appendToFile(
     ? existingContent.trimEnd() + '\n\n' + appendContent
     : appendContent
 
-  await upsertFile(config, path, newContent, commitMessage)
+  await upsertFile(config, path, newContent, commitMessage, sha)
 }
