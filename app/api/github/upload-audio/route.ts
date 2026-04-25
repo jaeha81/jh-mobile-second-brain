@@ -20,10 +20,12 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON
+  const clientId = process.env.GOOGLE_CLIENT_ID
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN
   const rootFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID
 
-  if (!serviceAccountJson || !rootFolderId) {
+  if (!clientId || !clientSecret || !refreshToken || !rootFolderId) {
     return NextResponse.json({ success: false, error: 'Google Drive 환경변수 미설정' }, { status: 500 })
   }
 
@@ -55,7 +57,7 @@ export async function POST(req: NextRequest) {
   const mimeType = fileName.endsWith('.webm') ? 'audio/webm' : 'audio/mpeg'
 
   try {
-    const config = { serviceAccountJson, rootFolderId }
+    const config = { clientId, clientSecret, refreshToken, rootFolderId }
     await uploadBinaryFile(config, audioPath, audioBase64, mimeType)
     return NextResponse.json({ success: true, path: audioPath, sessionId })
   } catch (err) {

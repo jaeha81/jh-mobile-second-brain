@@ -2,19 +2,21 @@ import { NextResponse } from 'next/server'
 import { checkFolderAccess } from '@/lib/googleDriveClient'
 
 export async function GET() {
-  const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON
+  const clientId = process.env.GOOGLE_CLIENT_ID
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN
   const rootFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID
 
-  if (!serviceAccountJson || !rootFolderId) {
+  if (!clientId || !clientSecret || !refreshToken || !rootFolderId) {
     return NextResponse.json({
       configured: false,
       repoAccessible: false,
-      error: '환경변수 미설정: GOOGLE_SERVICE_ACCOUNT_JSON, GOOGLE_DRIVE_FOLDER_ID 확인 필요',
+      error: '환경변수 미설정: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN, GOOGLE_DRIVE_FOLDER_ID 확인 필요',
     })
   }
 
   try {
-    const accessible = await checkFolderAccess({ serviceAccountJson, rootFolderId })
+    const accessible = await checkFolderAccess({ clientId, clientSecret, refreshToken, rootFolderId })
     return NextResponse.json({
       configured: true,
       repoAccessible: accessible,

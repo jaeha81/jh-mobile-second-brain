@@ -2,17 +2,16 @@ import { google } from 'googleapis'
 import { Readable } from 'stream'
 
 interface DriveConfig {
-  serviceAccountJson: string
+  clientId: string
+  clientSecret: string
+  refreshToken: string
   rootFolderId: string
 }
 
-function getDriveClient(serviceAccountJson: string) {
-  const credentials = JSON.parse(serviceAccountJson)
-  const auth = new google.auth.GoogleAuth({
-    credentials,
-    scopes: ['https://www.googleapis.com/auth/drive'],
-  })
-  return google.drive({ version: 'v3', auth })
+function getDriveClient(config: DriveConfig) {
+  const oauth2Client = new google.auth.OAuth2(config.clientId, config.clientSecret)
+  oauth2Client.setCredentials({ refresh_token: config.refreshToken })
+  return google.drive({ version: 'v3', auth: oauth2Client })
 }
 
 async function getOrCreateFolder(
@@ -65,7 +64,7 @@ async function findFile(
 }
 
 export async function upsertTextFile(config: DriveConfig, filePath: string, content: string): Promise<void> {
-  const drive = getDriveClient(config.serviceAccountJson)
+  const drive = getDriveClient(config)
   const parts = filePath.split('/')
   const fileName = parts.pop()!
   const folderId = parts.length > 0
@@ -90,7 +89,7 @@ export async function upsertTextFile(config: DriveConfig, filePath: string, cont
 }
 
 export async function appendTextFile(config: DriveConfig, filePath: string, appendContent: string): Promise<void> {
-  const drive = getDriveClient(config.serviceAccountJson)
+  const drive = getDriveClient(config)
   const parts = filePath.split('/')
   const fileName = parts.pop()!
   const folderId = parts.length > 0
@@ -134,7 +133,7 @@ export async function uploadBinaryFile(
   base64Content: string,
   mimeType: string
 ): Promise<void> {
-  const drive = getDriveClient(config.serviceAccountJson)
+  const drive = getDriveClient(config)
   const parts = filePath.split('/')
   const fileName = parts.pop()!
   const folderId = parts.length > 0
@@ -161,7 +160,7 @@ export async function uploadBinaryFile(
 
 export async function checkFolderAccess(config: DriveConfig): Promise<boolean> {
   try {
-    const drive = getDriveClient(config.serviceAccountJson)
+    const drive = getDriveClient(config)
     const res = await drive.files.get({ fileId: config.rootFolderId, fields: 'id' })
     return !!res.data.id
   } catch {
