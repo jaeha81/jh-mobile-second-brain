@@ -1,11 +1,11 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import AppShell from '@/components/AppShell'
 import StatusCard from '@/components/StatusCard'
 import SyncButton from '@/components/SyncButton'
 import ErrorBanner from '@/components/ErrorBanner'
-import { hasFullConsent, getEventsByDate, getAudioSessionsByDate, getLatestSyncLog } from '@/lib/db'
+import { hasFullConsent, getEventsByDate, getAudioSessionsByDate, getLatestSyncLog, getSettings } from '@/lib/db'
 import { buildDailyData } from '@/lib/dailyBuilder'
 import { todayString } from '@/lib/date'
 import { initSession } from '@/lib/eventLogger'
@@ -17,6 +17,7 @@ export default function HomePage() {
   const [audioCount, setAudioCount] = useState(0)
   const [lastSync, setLastSync] = useState<string | undefined>()
   const [error, setError] = useState('')
+  const autoSyncAttempted = useRef(false)
   const today = todayString()
 
   useEffect(() => {
@@ -26,22 +27,31 @@ export default function HomePage() {
 
   async function loadStatus() {
     try {
-      const [ok, events, sessions, syncLog] = await Promise.all([
+      const [ok, events, sessions, syncLog, settings] = await Promise.all([
         hasFullConsent(),
         getEventsByDate(today),
         getAudioSessionsByDate(today),
         getLatestSyncLog(),
+        getSettings(),
       ])
       setConsented(ok)
       setEventCount(events.length)
       setAudioCount(sessions.length)
       setLastSync(syncLog?.syncedAt)
-    } catch (err) {
+
+      if (ok && settings.autoSync && events.length > 0 && !autoSyncAttempted.current) {
+        const alreadySyncedToday = syncLog?.syncedAt?.startsWith(today)
+        if (!alreadySyncedToday) {
+          autoSyncAttempted.current = true
+          performSync()
+        }
+      }
+    } catch {
       setError('상태 로드 실패')
     }
   }
 
-  async function handleSync(): Promise<{ success: boolean; error?: string }> {
+  async function performSync(): Promise<{ success: boolean; error?: string }> {
     try {
       const daily = await buildDailyData(today)
       const res = await fetch('/api/github/sync-daily', {
@@ -56,11 +66,20 @@ export default function HomePage() {
         }),
       })
       const data = await res.json()
-      if (data.success) await loadStatus()
+      if (data.success) {
+        const syncLog = await import('@/lib/db').then(m => m.getLatestSyncLog())
+        setLastSync(syncLog?.syncedAt)
+      }
       return data
     } catch (err) {
       return { success: false, error: err instanceof Error ? err.message : '동기화 실패' }
     }
+  }
+
+  async function handleSync(): Promise<{ success: boolean; error?: string }> {
+    const result = await performSync()
+    if (result.success) await loadStatus()
+    return result
   }
 
   if (consented === null) {

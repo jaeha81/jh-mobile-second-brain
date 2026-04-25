@@ -1,6 +1,6 @@
 # Current State
 
-업데이트: 2026-04-25
+업데이트: 2026-04-25 (v2)
 
 ## 완료된 기능
 
@@ -47,16 +47,22 @@
 - [x] docs/ 6개
 - [x] README.md
 
-## 미완료 기능 (MVP 이후)
-- STT 음성 텍스트 변환
-- 오디오 원본 GitHub 업로드 (설정 ON 시 동작 가능하지만 API Route 미구현)
-- 자동 동기화 (설정 저장만, 실제 interval 미구현)
+### MVP 추가 구현 (2026-04-25 v2)
+- [x] `POST /api/github/upload-audio` — 오디오 원본(webm) GitHub 업로드
+- [x] `lib/githubClient.ts` — `uploadBinaryFile()` 바이너리 업로드 함수
+- [x] `components/RecorderControls.tsx` — 녹음 정지 후 `uploadAudioToGithub` 설정 ON 시 자동 업로드
+- [x] `app/page.tsx` — `autoSync` 설정 ON 시 앱 로드 시 자동 동기화 (당일 미동기화 시만)
+
+## 미완료 기능 (Phase 2 이후)
+- STT 음성 텍스트 변환 (Whisper API)
+- GPT 자동 요약
 
 ## 현재 막힌 지점
 없음.
 
 ## 다음 작업
-1. .env.local 설정 후 `npm run dev` 로컬 실행
+1. `.env.local` 설정 후 `npm run dev` 로컬 실행
 2. 모바일 브라우저 접속 + PWA 설치
 3. 동의 → 기록 → 메모 → 동기화 전체 플로우 테스트
-4. Codex 검증 체크리스트 실행
+4. 오디오 업로드 ON 후 녹음 → GitHub 확인
+5. autoSync ON 후 앱 재시작 → 자동 동기화 확인

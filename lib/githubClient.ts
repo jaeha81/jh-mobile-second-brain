@@ -74,6 +74,34 @@ export async function upsertFile(
   }
 }
 
+export async function uploadBinaryFile(
+  config: GithubConfig,
+  path: string,
+  base64Content: string,
+  commitMessage: string
+): Promise<void> {
+  const sha = await getFileSHA(config, path)
+  const url = `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${path}`
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${config.token}`,
+      Accept: 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      message: commitMessage,
+      content: base64Content,
+      branch: config.branch,
+      ...(sha ? { sha } : {}),
+    }),
+  })
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`GitHub binary upload failed ${res.status}: ${body}`)
+  }
+}
+
 export async function checkRepoAccess(config: GithubConfig): Promise<boolean> {
   const url = `https://api.github.com/repos/${config.owner}/${config.repo}`
   const res = await fetch(url, {
